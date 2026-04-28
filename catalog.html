@@ -311,7 +311,19 @@ const T = {
     footer:"© 2026 Go Wedding Invites — Alle Rechte vorbehalten.",noProduct:"Keine Produkte gefunden.",loading:"Laden…"}
 };
 
-const CATS = ["all","weddingInvites","weddingFavors","hennaAccessories"];
+const DEFAULT_CATS = [
+  { id:"weddingInvites",   emoji:"💌", name:{ TR:"Düğün Davetiyeleri", EN:"Wedding Invites",    ES:"Invitaciones de Boda",  AR:"دعوات الزفاف",    DE:"Hochzeitseinladungen" }},
+  { id:"weddingFavors",    emoji:"🎁", name:{ TR:"Düğün Hediyelikleri",EN:"Wedding Favors",      ES:"Recuerdos de Boda",     AR:"هدايا الزفاف",    DE:"Hochzeitsgeschenke" }},
+  { id:"hennaAccessories", emoji:"🌿", name:{ TR:"Kına Aksesuarları",  EN:"Henna Accessories",   ES:"Accesorios de Henna",   AR:"إكسسوارات الحناء",DE:"Henna-Accessoires" }}
+];
+let allCats = [...DEFAULT_CATS];
+
+// Firestore'dan özel kategorileri yükle
+db.collection("categories").orderBy("createdAt","asc").onSnapshot(snap => {
+  const custom = snap.docs.map(d=>({id:d.id,...d.data(),name:{TR:d.data().name,EN:d.data().name,ES:d.data().name,AR:d.data().name,DE:d.data().name}}));
+  allCats = [...DEFAULT_CATS, ...custom];
+  render();
+});
 
 let lang = "TR";
 let activeCat = "all";
@@ -331,7 +343,12 @@ db.collection("products").orderBy("createdAt","desc").onSnapshot(snap => {
 // RENDER
 // ════════════════════════════════════════════
 function t(){ return T[lang]; }
-function catLabel(c){ return {all:t().all,weddingInvites:t().wi,weddingFavors:t().wf,hennaAccessories:t().ha}[c]||c; }
+function catLabel(c){
+  if (c==="all") return t().all;
+  const found = allCats.find(x=>x.id===c);
+  if (!found) return c;
+  return found.emoji + " " + (found.name?.[lang] || found.name?.TR || found.name || c);
+}
 function catCount(c){ return c==="all"?allProducts.length:allProducts.filter(p=>p.category===c).length; }
 function getName(p){ return p.name?.[lang] || p.name?.EN || p.name?.TR || "—"; }
 function getDesc(p){ return p.desc?.[lang] || p.desc?.EN || p.desc?.TR || ""; }
@@ -350,9 +367,9 @@ function render(){
   document.getElementById("fTag").textContent = tx.tagline;
   document.getElementById("fContact").textContent = tx.contact;
   document.getElementById("fServices").textContent = tx.services;
-  document.getElementById("fsi1").textContent = tx.wi;
-  document.getElementById("fsi2").textContent = tx.wf;
-  document.getElementById("fsi3").textContent = tx.ha;
+  document.getElementById("fsi1").textContent = catLabel("weddingInvites");
+  document.getElementById("fsi2").textContent = catLabel("weddingFavors");
+  document.getElementById("fsi3").textContent = catLabel("hennaAccessories");
   document.getElementById("fFooter").textContent = tx.footer;
 
   // Lang switcher
@@ -360,8 +377,9 @@ function render(){
     `<button class="lbtn${l===lang?" on":""}" onclick="setLang('${l}')">${LABEL[l]}</button>`
   ).join("");
 
-  // Cat tabs
-  document.getElementById("catTabs").innerHTML = CATS.map(c=>
+  // Cat tabs — dinamik
+  const allCatIds = ["all", ...allCats.map(c=>c.id)];
+  document.getElementById("catTabs").innerHTML = allCatIds.map(c=>
     `<button class="ctab${c===activeCat?" on":""}" onclick="setCat('${c}')">
       ${catLabel(c)}<span class="ccount">${catCount(c)}</span>
     </button>`
