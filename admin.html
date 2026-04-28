@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GWI – Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+
+<!-- ═══════════════════════════════════════════════════
+     FIREBASE CONFIG — Firebase Console > Project Settings
+     aşağıdaki değerleri kendi projenle değiştir
+     ═══════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey:            "AIzaSyAgRdjdceCoL09Q8RvH0Em3vA1z15hMZDE",
+    authDomain:        "nurullah-katalog.firebaseapp.com",
+    projectId:         "nurullah-katalog",
+    storageBucket:     "nurullah-katalog.firebasestorage.app",
+    messagingSenderId: "1079306260397",
+    appId:             "1:1079306260397:web:c0804e594be241be065b24"
+  });
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --burg:#3A0C1E;--burg2:#5C1532;
+  --gold:#B8892A;--gold2:#D4A845;
+  --ivory:#FBF7F2;--cream:#F0E6D8;
+  --white:#fff;--txt:#1A0A0A;--txt3:#8A6A6A;
+  --err:#C41E3A;--ok:#2D7A4F;
+}
+body{font-family:'Nunito',sans-serif;background:var(--ivory);color:var(--txt);min-height:100vh;}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#2A0616,#3A0C1E,#4E1228);padding:20px;}
+.login-box{background:rgba(255,255,255,.06);border:1px solid rgba(184,137,42,.22);
+  border-radius:14px;padding:40px 32px;width:100%;max-width:380px;text-align:center;
+  backdrop-filter:blur(8px);}
+.login-logo{font-family:'Cinzel',serif;font-size:20px;color:var(--gold2);letter-spacing:.06em;margin-bottom:4px;}
+.login-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:rgba(255,255,255,.5);margin-bottom:28px;}
+.login-box input{width:100%;padding:12px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(184,137,42,.25);
+  border-radius:7px;color:#fff;font-family:'Nunito',sans-serif;font-size:13.5px;margin-bottom:10px;outline:none;transition:border-color .2s;}
+.login-box input:focus{border-color:var(--gold);}
+.login-box input::placeholder{color:rgba(255,255,255,.35);}
+.login-btn{width:100%;padding:13px;background:var(--gold);color:var(--burg);border:none;border-radius:7px;
+  font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:.06em;cursor:pointer;transition:background .2s;margin-top:4px;}
+.login-btn:hover{background:var(--gold2);}
+.login-err{color:#ff8080;font-size:12px;margin-top:10px;min-height:18px;}
+
+/* LAYOUT */
+.layout{display:none;min-height:100vh;flex-direction:column;}
+.layout.show{display:flex;}
+
+/* TOPBAR */
+.topbar{background:linear-gradient(160deg,#2A0616,#3A0C1E);display:flex;align-items:center;
+  justify-content:space-between;padding:12px 20px;box-shadow:0 2px 16px rgba(58,12,30,.4);
+  position:sticky;top:0;z-index:100;}
+.topbar-brand{font-family:'Cinzel',serif;font-size:16px;color:var(--gold2);letter-spacing:.06em;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-user{font-size:11.5px;color:rgba(255,255,255,.5);}
+.logout-btn{background:transparent;border:1px solid rgba(184,137,42,.3);color:rgba(255,255,255,.6);
+  font-size:11.5px;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.logout-btn:hover{border-color:var(--gold);color:var(--gold2);}
+
+/* BODY GRID */
+.body{display:grid;grid-template-columns:1fr;flex:1;}
+@media(min-width:860px){.body{grid-template-columns:420px 1fr;}}
+
+/* FORM PANEL */
+.form-panel{background:var(--white);border-right:1px solid var(--cream);
+  padding:24px 20px;overflow-y:auto;max-height:calc(100vh - 56px);}
+.panel-title{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--burg);
+  letter-spacing:.05em;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--cream);}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--txt3);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;}
+.field input,.field textarea,.field select{width:100%;padding:10px 13px;border:1.5px solid var(--cream);
+  border-radius:7px;font-family:'Nunito',sans-serif;font-size:13px;color:var(--txt);
+  background:var(--ivory);outline:none;transition:border-color .2s;}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold);}
+.field textarea{resize:vertical;min-height:70px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* PHOTO */
+.photo-area{border:2px dashed var(--cream);border-radius:10px;padding:20px;
+  text-align:center;cursor:pointer;transition:border-color .2s;position:relative;
+  overflow:hidden;aspect-ratio:3/4;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:var(--ivory);}
+.photo-area:hover{border-color:var(--gold);}
+.ph-icon{font-size:28px;opacity:.4;}
+.ph-txt{font-size:11px;color:var(--txt3);margin-top:6px;font-family:'Cormorant Garamond',serif;font-style:italic;}
+.ph-overlay{position:absolute;inset:0;background:rgba(58,12,30,.55);display:flex;
+  align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:8px;}
+.photo-area:hover .ph-overlay{opacity:1;}
+.ph-overlay-txt{color:#fff;font-size:12px;font-weight:700;}
+
+/* WA PREVIEW */
+.wa-preview{margin-top:6px;padding:8px 12px;background:#f0faf4;border-radius:6px;
+  font-size:11.5px;color:var(--ok);display:flex;align-items:center;gap:6px;}
+
+/* BUTTONS */
+.save-btn{width:100%;padding:13px;background:var(--burg);color:#fff;border:none;border-radius:7px;
+  font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:.05em;cursor:pointer;
+  transition:background .2s;margin-top:6px;}
+.save-btn:hover{background:var(--burg2);}
+.save-btn:disabled{opacity:.5;cursor:not-allowed;}
+.reset-btn{width:100%;padding:10px;background:transparent;color:var(--txt3);border:1.5px solid var(--cream);
+  border-radius:7px;font-family:'Nunito',sans-serif;font-size:12.5px;cursor:pointer;transition:all .2s;margin-top:8px;}
+.reset-btn:hover{border-color:var(--txt3);color:var(--txt);}
+
+/* FORM MSG */
+.form-msg{padding:10px 14px;border-radius:7px;font-size:12.5px;font-weight:600;margin-bottom:14px;display:none;}
+.form-msg.ok{background:#e8f8ee;color:var(--ok);display:block;}
+.form-msg.err{background:#fce8ec;color:var(--err);display:block;}
+
+/* LIST PANEL */
+.list-panel{background:var(--ivory);padding:24px 20px;overflow-y:auto;max-height:calc(100vh - 56px);}
+.list-head{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--cream);}
+.list-title{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--burg);letter-spacing:.05em;}
+.count-badge{background:var(--burg);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;}
+
+.cat-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.cf-btn{background:var(--white);border:1.5px solid var(--cream);color:var(--txt3);font-size:11px;
+  padding:5px 11px;border-radius:20px;cursor:pointer;font-weight:700;letter-spacing:.04em;transition:all .2s;}
+.cf-btn:hover{border-color:var(--gold);color:var(--burg);}
+.cf-btn.on{background:var(--burg);border-color:var(--burg);color:#fff;}
+
+.prod-list{display:flex;flex-direction:column;gap:10px;}
+.prod-item{background:var(--white);border-radius:10px;padding:12px;display:flex;gap:12px;
+  align-items:center;border:1.5px solid transparent;transition:all .2s;}
+.prod-item:hover{border-color:var(--gold);box-shadow:0 2px 12px rgba(58,12,30,.08);}
+.prod-item.editing{border-color:var(--gold);background:#fffdf7;}
+.prod-thumb{width:52px;height:68px;border-radius:6px;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;font-size:20px;background:var(--cream);overflow:hidden;}
+.prod-thumb img{width:52px;height:68px;object-fit:cover;}
+.prod-info{flex:1;min-width:0;}
+.prod-name{font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:500;
+  color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+.prod-meta{font-size:10.5px;color:var(--txt3);display:flex;gap:8px;flex-wrap:wrap;}
+.prod-cat-tag{background:var(--cream);padding:2px 7px;border-radius:10px;font-weight:700;
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);}
+.prod-price{font-family:'Cinzel',serif;font-size:12px;color:var(--burg);font-weight:600;}
+.prod-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.edit-btn,.del-btn{border:none;border-radius:5px;padding:5px 10px;font-size:10.5px;font-weight:700;cursor:pointer;transition:all .2s;}
+.edit-btn{background:var(--cream);color:var(--burg);}
+.edit-btn:hover{background:var(--gold);color:var(--burg);}
+.del-btn{background:#fce8ec;color:var(--err);}
+.del-btn:hover{background:var(--err);color:#fff;}
+
+.empty-list{text-align:center;padding:40px 20px;color:var(--txt3);}
+.empty-icon{font-size:36px;opacity:.3;margin-bottom:10px;}
+.empty-txt{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">✦ Go Wedding Invites</div>
+    <div class="login-sub">Admin Panel — Yönetim Girişi</div>
+    <input type="email" id="loginEmail" placeholder="E-posta adresi" autocomplete="email"/>
+    <input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">Giriş Yap</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="layout" id="layout">
+  <div class="topbar">
+    <div class="topbar-brand">✦ GWI Admin Panel</div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="userEmail"></span>
+      <button class="logout-btn" onclick="auth.signOut()">Çıkış</button>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- FORM -->
+    <div class="form-panel">
+      <div class="panel-title" id="formTitle">✦ Yeni Ürün Ekle</div>
+      <div class="form-msg" id="formMsg"></div>
+
+      <div class="field">
+        <label>Ürün Fotoğrafı</label>
+        <div class="photo-area" id="photoArea" onclick="document.getElementById('photoInput').click()">
+          <span class="ph-icon">🌸</span>
+          <span class="ph-txt">Tıklayın veya sürükleyin</span>
+          <div class="ph-overlay"><span class="ph-overlay-txt">📷 Değiştir</span></div>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhoto(event)"/>
+      </div>
+
+      <div class="field">
+        <label>Ürün Adı (Türkçe) *</label>
+        <input type="text" id="nameTR" placeholder="örn: Zarif Siyah Kurdele Davetiye"/>
+      </div>
+      <div class="field">
+        <label>Product Name (English) *</label>
+        <input type="text" id="nameEN" placeholder="e.g: Elegant Black Ribbon Invitation"/>
+      </div>
+
+      <div class="field">
+        <label>Kategori</label>
+        <select id="category">
+          <option value="weddingInvites">💌 Düğün Davetiyeleri</option>
+          <option value="weddingFavors">🎁 Düğün Hediyelikleri</option>
+          <option value="hennaAccessories">🌿 Kına Aksesuarları</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Fiyat — boş = "İletişim" gösterilir</label>
+        <div class="field-row">
+          <input type="number" id="price" placeholder="€ Fiyat" step="0.01" min="0"/>
+          <input type="number" id="origPrice" placeholder="€ Orijinal (indirim)" step="0.01" min="0"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Açıklama (Türkçe)</label>
+        <textarea id="descTR" placeholder="Ürün hakkında kısa bir açıklama..."></textarea>
+      </div>
+      <div class="field">
+        <label>Description (English)</label>
+        <textarea id="descEN" placeholder="A short description of the product..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>WhatsApp Numarası (başında 90)</label>
+        <input type="text" id="waNumber" value="905551686365" oninput="updateWaPreview()"/>
+        <div class="wa-preview" id="waPreview">📱 wa.me/905551686365</div>
+      </div>
+      <div class="field">
+        <label>Hazır WhatsApp Mesajı (isteğe bağlı)</label>
+        <input type="text" id="waMsg" placeholder="Merhaba, bu davetiye hakkında bilgi almak istiyorum."/>
+      </div>
+
+      <button class="save-btn" id="saveBtn" onclick="saveProduct()">✦ Kaydet</button>
+      <button class="reset-btn" onclick="resetForm()">Formu Temizle</button>
+      <input type="hidden" id="editingId"/>
+    </div>
+
+    <!-- LIST -->
+    <div class="list-panel">
+      <div class="list-head">
+        <span class="list-title">✦ Ürünler</span>
+        <span class="count-badge" id="countBadge">0</span>
+      </div>
+      <div class="cat-filter">
+        <button class="cf-btn on" onclick="filterCat('all',this)">Tümü</button>
+        <button class="cf-btn" onclick="filterCat('weddingInvites',this)">💌 Davetiyeler</button>
+        <button class="cf-btn" onclick="filterCat('weddingFavors',this)">🎁 Hediyelikler</button>
+        <button class="cf-btn" onclick="filterCat('hennaAccessories',this)">🌿 Kına</button>
+      </div>
+      <div class="prod-list" id="prodList">
+        <div class="empty-list">
+          <div class="empty-icon">🌸</div>
+          <div class="empty-txt">Henüz ürün eklenmedi.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── AUTH ──
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById("loginWrap").style.display = "none";
+    document.getElementById("layout").classList.add("show");
+    document.getElementById("userEmail").textContent = user.email;
+    listenProducts();
+  } else {
+    document.getElementById("loginWrap").style.display = "flex";
+    document.getElementById("layout").classList.remove("show");
+  }
+});
+
+function doLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass  = document.getElementById("loginPass").value;
+  const errEl = document.getElementById("loginErr");
+  errEl.textContent = "";
+  if (!email || !pass) { errEl.textContent = "E-posta ve şifre gerekli."; return; }
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(e => errEl.textContent = "Giriş başarısız: " + e.message);
+}
+
+// ── PHOTO ──
+let currentPhoto = null;
+
+async function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  currentPhoto = await compressImage(file, 700, 0.72);
+  const area = document.getElementById("photoArea");
+  area.innerHTML = `<img src="${currentPhoto}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;"/>
+    <div class="ph-overlay"><span class="ph-overlay-txt">📷 Değiştir</span></div>`;
+  area.onclick = () => document.getElementById("photoInput").click();
+  e.target.value = "";
+}
+
+function compressImage(file, maxW, quality) {
+  return new Promise(res => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = Math.min(maxW / img.width, 1);
+        const c = document.createElement("canvas");
+        c.width = img.width * ratio; c.height = img.height * ratio;
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", quality));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function updateWaPreview() {
+  const num = document.getElementById("waNumber").value.replace(/\D/g,"");
+  document.getElementById("waPreview").textContent = "📱 wa.me/" + (num||"…");
+}
+
+// ── SAVE ──
+const CAT_TR = { weddingInvites:"💌 Davetiye", weddingFavors:"🎁 Hediyelik", hennaAccessories:"🌿 Kına" };
+
+async function saveProduct() {
+  const nameTR = document.getElementById("nameTR").value.trim();
+  const nameEN = document.getElementById("nameEN").value.trim();
+  if (!nameTR || !nameEN) { showMsg("Türkçe ve İngilizce ürün adı zorunludur.","err"); return; }
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true; btn.textContent = "Kaydediliyor…";
+  const editingId = document.getElementById("editingId").value;
+  const data = {
+    name:     { TR:nameTR, EN:nameEN },
+    category: document.getElementById("category").value,
+    price:    parseFloat(document.getElementById("price").value)||null,
+    origPrice:parseFloat(document.getElementById("origPrice").value)||null,
+    desc:     { TR:document.getElementById("descTR").value.trim(),
+                EN:document.getElementById("descEN").value.trim() },
+    waNumber: document.getElementById("waNumber").value.replace(/\D/g,""),
+    waMsg:    document.getElementById("waMsg").value.trim(),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if (currentPhoto) data.image = currentPhoto;
+  if (!editingId) data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+  try {
+    if (editingId) await db.collection("products").doc(editingId).update(data);
+    else await db.collection("products").add(data);
+    showMsg(editingId ? "Ürün güncellendi ✓" : "Ürün eklendi ✓","ok");
+    resetForm();
+  } catch(e) { showMsg("Hata: "+e.message,"err"); }
+  btn.disabled = false; btn.textContent = "✦ Kaydet";
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`"${name}" silinsin mi?`)) return;
+  await db.collection("products").doc(id).delete().catch(e=>alert(e.message));
+}
+
+function editProduct(id) {
+  const p = allProducts.find(x=>x.id===id); if (!p) return;
+  document.getElementById("editingId").value = id;
+  document.getElementById("nameTR").value    = p.name?.TR||"";
+  document.getElementById("nameEN").value    = p.name?.EN||"";
+  document.getElementById("category").value  = p.category||"weddingInvites";
+  document.getElementById("price").value     = p.price||"";
+  document.getElementById("origPrice").value = p.origPrice||"";
+  document.getElementById("descTR").value    = p.desc?.TR||"";
+  document.getElementById("descEN").value    = p.desc?.EN||"";
+  document.getElementById("waNumber").value  = p.waNumber||"905551686365";
+  document.getElementById("waMsg").value     = p.waMsg||"";
+  updateWaPreview();
+  if (p.image) {
+    currentPhoto = p.image;
+    const area = document.getElementById("photoArea");
+    area.innerHTML = `<img src="${p.image}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;"/>
+      <div class="ph-overlay"><span class="ph-overlay-txt">📷 Değiştir</span></div>`;
+    area.onclick = () => document.getElementById("photoInput").click();
+  }
+  document.getElementById("formTitle").textContent = "✦ Ürünü Düzenle";
+  document.querySelectorAll(".prod-item").forEach(el=>el.classList.remove("editing"));
+  document.querySelector(`.prod-item[data-id="${id}"]`)?.classList.add("editing");
+  document.querySelector(".form-panel").scrollTo({top:0,behavior:"smooth"});
+}
+
+function resetForm() {
+  ["nameTR","nameEN","price","origPrice","descTR","descEN","waMsg","editingId"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("waNumber").value = "905551686365";
+  document.getElementById("category").value = "weddingInvites";
+  currentPhoto = null; updateWaPreview();
+  document.getElementById("formTitle").textContent = "✦ Yeni Ürün Ekle";
+  const area = document.getElementById("photoArea");
+  area.innerHTML = `<span class="ph-icon">🌸</span><span class="ph-txt">Tıklayın veya sürükleyin</span>
+    <div class="ph-overlay"><span class="ph-overlay-txt">📷 Değiştir</span></div>`;
+  area.onclick = () => document.getElementById("photoInput").click();
+  document.querySelectorAll(".prod-item").forEach(el=>el.classList.remove("editing"));
+  hideMsg();
+}
+
+// ── REALTIME LIST ──
+let allProducts = []; let activeCatFilter = "all";
+
+function listenProducts() {
+  db.collection("products").orderBy("createdAt","desc").onSnapshot(snap => {
+    allProducts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderList();
+  });
+}
+
+function filterCat(cat,btn) {
+  activeCatFilter = cat;
+  document.querySelectorAll(".cf-btn").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on"); renderList();
+}
+
+function renderList() {
+  const items = activeCatFilter==="all" ? allProducts : allProducts.filter(p=>p.category===activeCatFilter);
+  document.getElementById("countBadge").textContent = items.length;
+  const list = document.getElementById("prodList");
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-list"><div class="empty-icon">🌸</div><div class="empty-txt">Bu kategoride ürün yok.</div></div>`;
+    return;
+  }
+  list.innerHTML = items.map(p=>`
+    <div class="prod-item" data-id="${p.id}">
+      <div class="prod-thumb">${p.image?`<img src="${p.image}"/>`:"🌸"}</div>
+      <div class="prod-info">
+        <div class="prod-name">${p.name?.TR||"—"}</div>
+        <div class="prod-meta">
+          <span class="prod-cat-tag">${CAT_TR[p.category]||""}</span>
+          <span class="prod-price">${p.price?"€"+p.price.toFixed(2):"İletişim"}</span>
+        </div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px;opacity:.7">${p.name?.EN||""}</div>
+      </div>
+      <div class="prod-actions">
+        <button class="edit-btn" onclick="editProduct('${p.id}')">Düzenle</button>
+        <button class="del-btn" onclick="deleteProduct('${p.id}','${(p.name?.TR||"").replace(/'/g,"\\'")}')">Sil</button>
+      </div>
+    </div>`).join("");
+}
+
+// ── MSG ──
+function showMsg(txt,type){ const el=document.getElementById("formMsg"); el.textContent=txt; el.className="form-msg "+type; clearTimeout(el._t); el._t=setTimeout(()=>{el.className="form-msg";},4000); }
+function hideMsg(){ document.getElementById("formMsg").className="form-msg"; }
+</script>
+</body>
+</html>
