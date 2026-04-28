@@ -223,10 +223,10 @@ body.rtl .modal-close{right:auto;left:12px;}
       <div class="f-brand">✦ Go Wedding Invites</div>
       <p class="f-txt" id="fTag"></p>
       <div style="display:flex;gap:10px;margin-top:9px;flex-wrap:wrap;">
-        <a href="https://goweddinginvites.com" target="_blank" class="f-link">Facebook</a>
-        <a href="https://goweddinginvites.com" target="_blank" class="f-link">Instagram</a>
-        <a href="https://goweddinginvites.com" target="_blank" class="f-link">YouTube</a>
-        <a href="https://goweddinginvites.com" target="_blank" class="f-link">Pinterest</a>
+        <a href="https://www.facebook.com/goweddinginvites" target="_blank" class="f-link">Facebook</a>
+        <a href="https://www.instagram.com/goweddinginvites" target="_blank" class="f-link">Instagram</a>
+        <a href="https://www.youtube.com/@goweddinginvites" target="_blank" class="f-link">YouTube</a>
+        <a href="https://www.pinterest.com/goweddinginvites" target="_blank" class="f-link">Pinterest</a>
       </div>
     </div>
     <div>
@@ -234,14 +234,13 @@ body.rtl .modal-close{right:auto;left:12px;}
       <p class="f-txt">Yeni Camii Cad. Sultanhamam İş Merkezi No:27/1<br>Eminönü / İstanbul, Türkiye</p>
       <a href="tel:+905551686365" class="f-link" style="margin-top:8px">📞 +90 555 168 63 65</a>
       <a href="mailto:info@goweddinginvites.com" class="f-link">✉ info@goweddinginvites.com</a>
+      <a href="https://wa.me/905551686365" target="_blank" class="f-link">💬 WhatsApp</a>
     </div>
     <div>
       <div class="f-head" id="fServices"></div>
-      <a href="https://goweddinginvites.com/shop/" target="_blank" class="f-link" id="fsi1"></a>
-      <a href="https://goweddinginvites.com/shop/" target="_blank" class="f-link" id="fsi2"></a>
-      <a href="https://goweddinginvites.com/shop/" target="_blank" class="f-link" id="fsi3"></a>
-      <a href="https://goweddinginvites.com/about-us/" target="_blank" class="f-link" style="margin-top:6px">About Us</a>
-      <a href="https://goweddinginvites.com/faqs/" target="_blank" class="f-link">FAQs</a>
+      <a href="catalog.html?cat=weddingInvites" class="f-link" id="fsi1"></a>
+      <a href="catalog.html?cat=weddingFavors" class="f-link" id="fsi2"></a>
+      <a href="catalog.html?cat=hennaAccessories" class="f-link" id="fsi3"></a>
     </div>
   </div>
   <div class="f-line"></div>
@@ -477,6 +476,15 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
 // ════════════════════════════════════════════
 function setLang(l){ lang=l; render(); }
 function setCat(c) { activeCat=c; render(); }
+
+// URL'den kategori oku — footer linklerinden gelince otomatik filtrele
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const cat = params.get("cat");
+  if (cat && ["weddingInvites","weddingFavors","hennaAccessories"].includes(cat)) {
+    activeCat = cat;
+  }
+})();
 
 render();
 </script>
