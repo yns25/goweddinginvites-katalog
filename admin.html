@@ -204,6 +204,21 @@ body{font-family:'Nunito',sans-serif;background:var(--ivory);color:var(--txt);mi
   border:none;border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;
   margin-top:5px;transition:all .2s;}
 .cp-edit:hover{background:var(--gold);}
+/* ── ICON PICKER ── */
+.icon-btn{
+  width:44px;height:44px;border-radius:8px;border:2px solid var(--cream);
+  background:var(--white);font-size:22px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;transition:all .18s;
+  position:relative;
+}
+.icon-btn:hover{border-color:var(--gold);background:#fffdf0;transform:scale(1.1);}
+.icon-btn.selected{border-color:var(--burg);background:#fdf0f4;box-shadow:0 0 0 3px rgba(58,12,30,.12);}
+.icon-btn.selected::after{
+  content:'✓';position:absolute;top:-5px;right:-5px;
+  background:var(--burg);color:#fff;border-radius:50%;
+  width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;
+  font-family:'Nunito',sans-serif;font-weight:800;
+}
 </style>
 </head>
 <body>
@@ -279,10 +294,12 @@ body{font-family:'Nunito',sans-serif;background:var(--ivory);color:var(--txt);mi
       <!-- YENİ KATEGORİ ALANI — seçilince açılır -->
       <div class="field" id="newCatField" style="display:none;background:#fffdf7;border:1.5px solid var(--gold);border-radius:10px;padding:14px;">
         <label>Yeni Katalog Adı</label>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <input type="text" id="newCatEmoji" placeholder="🎀" style="width:56px;text-align:center;font-size:18px;"/>
-          <input type="text" id="newCatName" placeholder="örn: Nişan Aksesuarları" style="flex:1;"/>
-        </div>
+        <input type="text" id="newCatName" placeholder="örn: Nişan Aksesuarları" style="width:100%;margin-bottom:12px;"/>
+
+        <label style="display:block;margin-bottom:8px;">Katalog İkonu Seç</label>
+        <div id="iconPicker" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;"></div>
+        <input type="hidden" id="newCatEmoji" value="💌"/>
+
         <button onclick="saveNewCategory()" style="width:100%;padding:9px;background:var(--burg);color:#fff;border:none;border-radius:6px;font-family:'Cinzel',serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.04em;">✦ Kataloğu Oluştur</button>
         <div id="newCatMsg" style="font-size:11.5px;margin-top:8px;min-height:16px;"></div>
       </div>
@@ -630,9 +647,46 @@ function renderCatFilters() {
   if (cp) cp.innerHTML = cpBtns;
 }
 
+// ── ICON PICKER ──
+const ICONS = [
+  // Düğün & Aşk
+  "💌","💍","💒","👰","🤵","💑","🥂","🍾","💐","🌹",
+  "🌸","🌺","🌼","🌻","🌷","🪷","🌿","🍃","🌱","🪴",
+  // Hediye & Aksesuar
+  "🎁","🎀","🎊","🎉","✨","🪩","🕯️","🧧","🪬","📿",
+  // Kına & Özel
+  "🌙","⭐","🌟","💫","🔮","🪄","🎭","🎨","🖼️","🪞",
+  // Takı & Moda
+  "💎","👑","👒","🧣","🥻","👗","💄","👛","🧴","🪷",
+  // Davetiye & Kağıt
+  "📜","📋","✉️","📩","🗒️","🖊️","🖋️","📖","📔","🏷️",
+  // Pasta & İkram
+  "🎂","🧁","🍰","🍫","🍬","🍭","🫖","☕","🍵","🥐"
+];
+
+function initIconPicker() {
+  const container = document.getElementById("iconPicker");
+  if (!container) return;
+  container.innerHTML = ICONS.map(ic =>
+    `<button type="button" class="icon-btn${ic==="💌"?" selected":""}"
+      title="${ic}" onclick="selectIcon('${ic}',this)">${ic}</button>`
+  ).join("");
+}
+
+function selectIcon(icon, btn) {
+  document.querySelectorAll(".icon-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  document.getElementById("newCatEmoji").value = icon;
+}
+
 function onCategoryChange(sel) {
   const newField = document.getElementById("newCatField");
-  newField.style.display = sel.value === "__new__" ? "block" : "none";
+  if (sel.value === "__new__") {
+    newField.style.display = "block";
+    initIconPicker();
+  } else {
+    newField.style.display = "none";
+  }
 }
 
 async function saveNewCategory() {
