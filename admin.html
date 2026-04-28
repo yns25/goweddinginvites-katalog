@@ -204,7 +204,12 @@ body{font-family:'Nunito',sans-serif;background:var(--ivory);color:var(--txt);mi
   border:none;border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;
   margin-top:5px;transition:all .2s;}
 .cp-edit:hover{background:var(--gold);}
-/* ── ICON PICKER ── */
+.cat-del-btn{
+  background:#fce8ec;border:none;border-radius:5px;
+  padding:3px 6px;font-size:11px;cursor:pointer;
+  transition:all .2s;line-height:1;margin-left:-4px;
+}
+.cat-del-btn:hover{background:var(--err);}
 .icon-btn{
   width:44px;height:44px;border-radius:8px;border:2px solid var(--cream);
   background:var(--white);font-size:22px;cursor:pointer;display:flex;
@@ -639,10 +644,20 @@ function renderCategorySelect() {
 function renderCatFilters() {
   const cf = document.getElementById("catFilter");
   const cp = document.querySelector(".cp-filter");
+
+  // Filtre butonları — varsayılan kategoriler düz, özel kategorilerde 🗑 butonu var
   const filterBtns = `<button class="cf-btn on" onclick="filterCat('all',this)">Tümü</button>` +
-    allCategories.map(c=>`<button class="cf-btn" onclick="filterCat('${c.id}',this)">${c.emoji} ${c.name}</button>`).join("");
+    allCategories.map(c => {
+      const isCustom = !DEFAULT_CATS.find(d=>d.id===c.id);
+      return `<span style="display:inline-flex;align-items:center;gap:2px;">
+        <button class="cf-btn" onclick="filterCat('${c.id}',this)">${c.emoji} ${c.name}</button>
+        ${isCustom ? `<button class="cat-del-btn" title="Kataloğu sil" onclick="deleteCategory('${c.id}','${c.name.replace(/'/g,"\\'")}')">🗑</button>` : ""}
+      </span>`;
+    }).join("");
+
   const cpBtns = `<button class="cp-btn on" onclick="cpFilter('all',this)">Tümü</button>` +
     allCategories.map(c=>`<button class="cp-btn" onclick="cpFilter('${c.id}',this)">${c.emoji} ${c.name}</button>`).join("");
+
   cf.innerHTML = filterBtns;
   if (cp) cp.innerHTML = cpBtns;
 }
@@ -687,6 +702,17 @@ function onCategoryChange(sel) {
   } else {
     newField.style.display = "none";
   }
+}
+
+async function deleteCategory(id, name) {
+  // Kaç ürün bu kategoride?
+  const snap = await db.collection("products").where("category","==",id).get();
+  const count = snap.size;
+  const warn = count > 0 ? `\n\n⚠️ Bu kategoride ${count} ürün var. Ürünler silinmez ama kategorisiz kalır.` : "";
+  if (!confirm(`"${name}" kataloğunu silmek istediğinize emin misiniz?${warn}`)) return;
+  try {
+    await db.collection("categories").doc(id).delete();
+  } catch(e) { alert("Silinemedi: " + e.message); }
 }
 
 async function saveNewCategory() {
